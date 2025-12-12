@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuizi i Gjuhës Shqipe - Noar</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>Përgatitje për Test - Gjuha Shqipe 3</h1>
+            <div class="progress-container">
+                <div id="progress-bar"></div>
+            </div>
+            <p id="question-counter">Pyetja 1 nga 30</p>
+        </div>
+
+        <div id="quiz-area" class="quiz-card">
+            <h2 id="question-text">Pyetja do të shfaqet këtu...</h2>
+            
+            <div id="options-container" class="options-grid"></div>
+
+            <div id="drag-drop-area" class="hidden">
+                <div id="drop-zone" class="drop-zone">
+                    <p class="placeholder-text">Tërhiq fjalët këtu për të formuar fjalinë</p>
+                </div>
+                <div id="drag-source" class="drag-source"></div>
+            </div>
+
+            <div id="feedback" class="hidden"></div>
+            <button id="next-btn" class="btn hidden" onclick="nextQuestion()">Vazhdo</button>
+        </div>
+
+        <div id="result-screen" class="hidden">
+            <h2>Bravo Noar! 🎉</h2>
+            <p>Ti përfundove kuizin.</p>
+            <p id="final-score">Pikët: 0</p>
+            <button class="btn" onclick="location.reload()">Provo Përsëri</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
