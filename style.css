@@ -1,0 +1,167 @@
+:root {
+    --primary: #4A90E2;
+    --success: #2ECC71;
+    --error: #E74C3C;
+    --bg: #f4f7f6;
+    --card: #ffffff;
+}
+
+body {
+    font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+    background-color: var(--bg);
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.container {
+    width: 100%;
+    max-width: 700px;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+h1 {
+    color: #2c3e50;
+    font-size: 1.8rem;
+}
+
+.progress-container {
+    width: 100%;
+    background-color: #ddd;
+    border-radius: 10px;
+    height: 10px;
+    margin-top: 10px;
+}
+
+#progress-bar {
+    height: 100%;
+    background-color: var(--primary);
+    border-radius: 10px;
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.quiz-card {
+    background: var(--card);
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+#question-text {
+    color: #34495e;
+    margin-bottom: 30px;
+    font-size: 1.5rem;
+}
+
+/* Options Grid */
+.options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.option-btn {
+    background: #e8f0fe;
+    border: 2px solid #bed4f1;
+    padding: 15px;
+    border-radius: 12px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.option-btn:hover {
+    background: #d2e3fc;
+    transform: translateY(-2px);
+}
+
+.option-btn.correct {
+    background-color: var(--success);
+    color: white;
+    border-color: var(--success);
+}
+
+.option-btn.wrong {
+    background-color: var(--error);
+    color: white;
+    border-color: var(--error);
+}
+
+/* Drag and Drop Styles */
+.hidden { display: none; }
+
+.drop-zone {
+    min-height: 80px;
+    border: 3px dashed #cbd5e0;
+    border-radius: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    margin-bottom: 20px;
+    background: #f8fafc;
+}
+
+.drag-source {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+.draggable-word {
+    background: white;
+    border: 2px solid var(--primary);
+    color: var(--primary);
+    padding: 10px 20px;
+    border-radius: 25px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    user-select: none;
+    touch-action: manipulation; /* Important for iPad */
+}
+
+.draggable-word:active {
+    transform: scale(0.95);
+}
+
+/* Feedback & Buttons */
+#feedback {
+    margin-top: 20px;
+    font-size: 1.3rem;
+    font-weight: bold;
+}
+
+.btn {
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 25px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    margin-top: 20px;
+    display: inline-block;
+}
+
+.btn:hover {
+    background-color: #357abd;
+}
+
+/* Single column for mobile */
+@media (max-width: 500px) {
+    .options-grid {
+        grid-template-columns: 1fr;
+    }
+}
