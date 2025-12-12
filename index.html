@@ -2,45 +2,829 @@
 <html lang="sq">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Kuizi i Gjuhës Shqipe - Noar</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        :root {
+            --primary: #4A90E2;
+            --secondary: #9b59b6;
+            --success: #2ECC71;
+            --error: #E74C3C;
+            --bg: #f0f8ff;
+            --card: #ffffff;
+            --text: #2c3e50;
+            --input-border: #bdc3c7;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            color: var(--text);
+            /* Important for iPad dragging */
+            overscroll-behavior: none;
+            touch-action: pan-y; 
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            margin-top: 5px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+            background: white;
+            padding: 15px;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border-bottom: 5px solid #e1e8ed;
+        }
+
+        h1 {
+            color: var(--primary);
+            font-size: 1.5rem;
+            margin: 0 0 10px 0;
+        }
+
+        .progress-container {
+            width: 100%;
+            background-color: #eee;
+            border-radius: 15px;
+            height: 12px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        #progress-bar {
+            height: 100%;
+            background-color: var(--success);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .status-text {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #7f8c8d;
+        }
+
+        .quiz-card {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 25px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+            text-align: center;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            touch-action: none; 
+        }
+
+        .tag {
+            background: var(--secondary);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            display: inline-block;
+            margin-bottom: 15px;
+            font-weight: bold;
+            align-self: center;
+        }
+
+        #question-text {
+            color: var(--text);
+            margin-bottom: 20px;
+            font-size: 1.4rem;
+            line-height: 1.4;
+            pointer-events: none;
+        }
+
+        /* Multiple Choice Grid */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .option-btn {
+            background: #fff;
+            border: 3px solid #dfe6e9;
+            padding: 15px;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            font-family: inherit;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+            box-shadow: 0 4px 0 #dfe6e9;
+        }
+
+        .option-btn:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+
+        .option-btn.correct { background-color: var(--success); color: white; border-color: #27ae60; box-shadow: 0 4px 0 #27ae60; }
+        .option-btn.wrong { background-color: var(--error); color: white; border-color: #c0392b; box-shadow: 0 4px 0 #c0392b; }
+
+        /* DRAG AND DROP STYLES */
+        .draggable-word {
+            background: white;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: grab;
+            box-shadow: 0 3px 5px rgba(74, 144, 226, 0.2);
+            user-select: none;
+            touch-action: none;
+            display: inline-block;
+            margin: 5px;
+            z-index: 10;
+            position: relative;
+        }
+        
+        .draggable-word:active {
+            cursor: grabbing;
+            transform: scale(1.1);
+            background-color: #e3f2fd;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+
+        .draggable-word.dragging {
+            position: fixed;
+            pointer-events: none;
+            opacity: 0.9;
+        }
+
+        /* Simple Reorder Zone */
+        .drop-zone {
+            min-height: 80px;
+            border: 3px dashed #bdc3c7;
+            border-radius: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            margin-bottom: 25px;
+            background: #f8fafc;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .drop-zone.hovered {
+            background-color: #e8f8f5;
+            border-color: var(--success);
+            transform: scale(1.02);
+        }
+
+        .placeholder-text {
+            color: #95a5a6;
+            font-size: 1rem;
+            pointer-events: none;
+        }
+
+        /* Analysis Grid (Buckets) */
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .instruction-text {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            margin-bottom: 10px;
+            pointer-events: none;
+        }
+
+        .category-box {
+            border: 2px solid #bdc3c7;
+            border-radius: 12px;
+            background: #f9f9f9;
+            display: flex;
+            flex-direction: column;
+            min-height: 150px;
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+        
+        .category-box.hovered {
+            border-color: var(--success);
+            background-color: #d1f2eb;
+            box-shadow: 0 0 15px rgba(46, 204, 113, 0.3);
+        }
+
+        .cat-title {
+            background: #ecf0f1;
+            padding: 8px 2px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #7f8c8d;
+            border-bottom: 1px solid #bdc3c7;
+            pointer-events: none;
+        }
+
+        .cat-content {
+            flex-grow: 1;
+            padding: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .cat-content .draggable-word {
+            width: 90%;
+            box-sizing: border-box;
+            font-size: 0.9rem;
+            margin: 2px 0;
+        }
+
+        .drag-source {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            padding: 15px;
+            border-top: 2px solid #eee;
+            background: #fff;
+            min-height: 80px;
+        }
+
+        /* Fill in the Blank */
+        .fill-blank-container {
+            font-size: 1.3rem;
+            line-height: 2;
+            margin-bottom: 20px;
+        }
+
+        .blank-input {
+            border: none;
+            border-bottom: 3px solid var(--primary);
+            background: transparent;
+            font-family: inherit;
+            font-size: 1.3rem;
+            width: 140px;
+            text-align: center;
+            color: var(--primary);
+            padding: 0 5px;
+            outline: none;
+        }
+
+        .blank-input.correct-input { border-bottom-color: var(--success); color: var(--success); }
+        .blank-input.wrong-input { border-bottom-color: var(--error); color: var(--error); }
+
+        /* Feedback and Controls */
+        #feedback-area {
+            margin-top: 15px;
+            min-height: 50px;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .feedback-msg { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: inherit;
+            box-shadow: 0 4px 10px rgba(74, 144, 226, 0.3);
+            transition: transform 0.2s;
+            display: inline-block;
+        }
+
+        .btn:hover { transform: scale(1.05); }
+        .btn-check { background-color: #f39c12; box-shadow: 0 4px 10px rgba(243, 156, 18, 0.3); }
+        .hidden { display: none !important; }
+
+        /* Result Screen */
+        .result-emoji { font-size: 4rem; display: block; margin-bottom: 10px; }
+        .result-title { font-size: 2rem; color: var(--primary); margin: 0; }
+        .result-subtitle { font-size: 1.4rem; margin: 10px 0; }
+        .score-text { font-size: 1.8rem; font-weight: bold; color: var(--success); margin: 20px 0; }
+
+        @media (max-width: 600px) {
+            .options-grid { grid-template-columns: 1fr; }
+            #question-text { font-size: 1.2rem; }
+            .cat-title { font-size: 0.8rem; }
+        }
+    </style>
 </head>
 <body>
 
     <div class="container">
         <div class="header">
-            <h1>Përgatitje për Test - Gjuha Shqipe 3</h1>
+            <h1>Kuizi i Noarit - Gjuha Shqipe 3</h1>
             <div class="progress-container">
                 <div id="progress-bar"></div>
             </div>
-            <p id="question-counter">Pyetja 1 nga 30</p>
+            <div class="status-text">
+                <span id="question-counter">Pyetja 1</span>
+                <span id="score-display">Pikët: 0</span>
+            </div>
         </div>
 
         <div id="quiz-area" class="quiz-card">
-            <h2 id="question-text">Pyetja do të shfaqet këtu...</h2>
+            <div id="topic-tag" class="tag">Tema</div>
+            <h2 id="question-text">Pyetja po ngarkohet...</h2>
             
-            <div id="options-container" class="options-grid"></div>
+            <!-- Multiple Choice Container -->
+            <div id="options-container" class="options-grid hidden"></div>
 
+            <!-- Simple Drag (Reorder) Container -->
             <div id="drag-drop-area" class="hidden">
-                <div id="drop-zone" class="drop-zone">
-                    <p class="placeholder-text">Tërhiq fjalët këtu për të formuar fjalinë</p>
+                <div id="drop-zone" class="drop-zone droppable">
+                    <p class="placeholder-text">Tërhiqi fjalët këtu 👇</p>
                 </div>
-                <div id="drag-source" class="drag-source"></div>
+                <div id="drag-source" class="drag-source droppable"></div>
+                <button id="check-drag-btn" class="btn btn-check" style="margin-top:20px;">Kontrollo</button>
             </div>
 
-            <div id="feedback" class="hidden"></div>
-            <button id="next-btn" class="btn hidden" onclick="nextQuestion()">Vazhdo</button>
+            <!-- Analysis Drag (Buckets) Container -->
+            <div id="analysis-area" class="hidden">
+                <p class="instruction-text">👇 Tërhiqi fjalët në kutinë e duhur.</p>
+                <div class="analysis-grid">
+                    <div class="category-box droppable" data-id="kryefjala">
+                        <span class="cat-title">Kryefjala</span>
+                        <div class="cat-content"></div>
+                    </div>
+                    <div class="category-box droppable" data-id="kallezuesi">
+                        <span class="cat-title">Kallëzuesi</span>
+                        <div class="cat-content"></div>
+                    </div>
+                    <div class="category-box droppable" data-id="plotesuese">
+                        <span class="cat-title">Pjesë Plotësuese</span>
+                        <div class="cat-content"></div>
+                    </div>
+                </div>
+                <div id="analysis-source" class="drag-source droppable"></div>
+                <button id="check-analysis-btn" class="btn btn-check" style="margin-top:10px;">Kontrollo Analizën</button>
+            </div>
+
+            <!-- Fill in Blank Container -->
+            <div id="fill-blank-area" class="hidden">
+                <div id="sentence-container" class="fill-blank-container"></div>
+                <button id="check-fill-btn" class="btn btn-check">Kontrollo</button>
+            </div>
+
+            <div id="feedback-area" class="hidden">
+                <div id="feedback-text" class="feedback-msg"></div>
+                <button id="next-btn" class="btn">Vazhdo ➡</button>
+            </div>
         </div>
 
-        <div id="result-screen" class="hidden">
-            <h2>Bravo Noar! 🎉</h2>
-            <p>Ti përfundove kuizin.</p>
-            <p id="final-score">Pikët: 0</p>
-            <button class="btn" onclick="location.reload()">Provo Përsëri</button>
+        <div id="result-screen" class="quiz-card hidden">
+            <span class="result-emoji">🏆</span>
+            <h2 class="result-title">Bravo Noar!</h2>
+            <p class="result-subtitle">Ti përfundove testin me sukses.</p>
+            <p id="final-score" class="score-text">Pikët: 0</p>
+            <button class="btn" onclick="location.reload()">Provo Përsëri 🔄</button>
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        const questions = [
+            // --- TOPIC: SHQISAT (5 Questions) ---
+            { type: "choice", topic: "Shqisat", question: "Me çfarë shqise e shijojmë akulloren?", options: ["Të nuhaturit (hunda)", "Të shijuarit (gjuha)", "Të prekurit (dora)"], answer: "Të shijuarit (gjuha)" },
+            { type: "choice", topic: "Shqisat", question: "Me çfarë shqise e dëgjojmë muzikën?", options: ["Të dëgjuarit (veshi)", "Të parit (syri)", "Të prekurit (dora)"], answer: "Të dëgjuarit (veshi)" },
+            { type: "choice", topic: "Shqisat", question: "Me çfarë shqise e nuhasim erën e luleve?", options: ["Të shijuarit", "Të nuhaturit", "Të parit"], answer: "Të nuhaturit" },
+            { type: "choice", topic: "Shqisat", question: "Kur Hajdi prek lëkurën e butë të kecit, cilën shqisë përdor?", options: ["Të prekurit", "Të nuhaturit", "Të dëgjuarit"], answer: "Të prekurit" },
+            { type: "choice", topic: "Shqisat", question: "Me çfarë shqise shohim ngjyrat e ylberit?", options: ["Të nuhaturit", "Të parit", "Të prekurit"], answer: "Të parit" },
+
+            // --- TOPIC: ANALIZA E FJALISË (5 Questions - Drag into Buckets) ---
+            { type: "analysis", topic: "Analiza e Fjalisë", instruction: "Gjej Kryefjalën, Kallëzuesin dhe Pjesët Plotësuese.", sentenceWords: [{ text: "Fëmijët", category: "kryefjala" }, { text: "ndihmojnë", category: "kallezuesi" }, { text: "mësuesen", category: "plotesuese" }] },
+            { type: "analysis", topic: "Analiza e Fjalisë", instruction: "Analizo fjalinë e gjatë: 'Nxënësit e klasës së tretë vizituan muzeun.'", sentenceWords: [{ text: "Nxënësit e klasës së tretë", category: "kryefjala" }, { text: "vizituan", category: "kallezuesi" }, { text: "muzeun", category: "plotesuese" }] },
+            { type: "analysis", topic: "Analiza e Fjalisë", instruction: "Gjej pjesët: 'Mami im gatuan gjellë të shijshme.'", sentenceWords: [{ text: "Mami im", category: "kryefjala" }, { text: "gatuan", category: "kallezuesi" }, { text: "gjellë të shijshme", category: "plotesuese" }] },
+            { type: "analysis", topic: "Analiza e Fjalisë", instruction: "Analizo fjalinë: 'Gjergj Kastrioti luftoi për lirinë.'", sentenceWords: [{ text: "Gjergj Kastrioti", category: "kryefjala" }, { text: "luftoi", category: "kallezuesi" }, { text: "për lirinë", category: "plotesuese" }] },
+            { type: "analysis", topic: "Analiza e Fjalisë", instruction: "Vendos fjalët: 'Zogjtë e vegjël cicërojnë bukur.'", sentenceWords: [{ text: "Zogjtë e vegjël", category: "kryefjala" }, { text: "cicërojnë", category: "kallezuesi" }, { text: "bukur", category: "plotesuese" }] },
+
+            // --- TOPIC: KRIJO FJALI (Fill in Blanks) (4 Questions) ---
+            { type: "fill", topic: "Krijo Fjali (Kryefjala)", instruction: "Shto Kryefjalën (Kush?) në fjali.", sentencePart1: "", sentencePart2: " kujdesen për gjyshin.", answer: ["Ata", "Fëmijët", "Nipat", "Mbesat", "Ato", "Familja"], placeholder: "Kush?" },
+            { type: "fill", topic: "Krijo Fjali (Kallëzuesi)", instruction: "Shto Kallëzuesin (Ç'bën?) në fjali.", sentencePart1: "Mami ", sentencePart2: " një tortë të madhe.", answer: ["gatuan", "bëri", "përgatiti", "bleu"], placeholder: "Ç'bën?" },
+            { type: "fill", topic: "Krijo Fjali (Pjesë Plotësuese)", instruction: "Shto një pjesë plotësuese (Ku?).", sentencePart1: "Peshku noton në ", sentencePart2: ".", answer: ["ujë", "det", "lumë", "liqen", "akuarium"], placeholder: "Ku?" },
+            { type: "fill", topic: "Krijo Fjali (Kryefjala)", instruction: "Kush po luan në oborr?", sentencePart1: "", sentencePart2: " luan me top.", answer: ["Djali", "Vajza", "Fëmija", "Noari", "Ai", "Ajo"], placeholder: "Kush?" },
+
+            // --- TOPIC: RENDITJA E FJALËVE (3 Questions) ---
+            { type: "drag", topic: "Renditja e Fjalëve", question: "Rendit fjalët për të formuar fjali:", words: ["shkon", "në", "shkollë", "Ana"], answer: "Ana shkon në shkollë" },
+            { type: "drag", topic: "Renditja e Fjalëve", question: "Rendit fjalët (Workbook f.31):", words: ["mban", "Babagjyshi", "një", "ditar"], answer: "Babagjyshi mban një ditar" },
+            { type: "drag", topic: "Renditja e Fjalëve", question: "Formo fjalinë:", words: ["bleu", "Mami", "lule", "të", "bukura"], answer: "Mami bleu lule të bukura" },
+
+            // --- TOPIC: GJEJ KALLËZUESIN (3 Questions - based on Q6) ---
+            { type: "choice", topic: "Gjej Kallëzuesin", question: "Gjej kallëzuesin në fjali: 'Ju shkoni çdo ditë në stërvitje.'", options: ["Ju", "shkoni", "stërvitje"], answer: "shkoni" },
+            { type: "choice", topic: "Gjej Kallëzuesin", question: "Gjej kallëzuesin në fjali: 'Fëmijët shkruajnë për të drejtat e tyre.'", options: ["Fëmijët", "shkruajnë", "të drejtat"], answer: "shkruajnë" },
+            { type: "choice", topic: "Gjej Kallëzuesin", question: "Gjej kallëzuesin: 'Dielli ndriçon tokën.'", options: ["Dielli", "ndriçon", "tokën"], answer: "ndriçon" },
+
+            // --- TOPIC: PLOTËSO FJALINË (Based on Q7) (3 Questions) ---
+            { type: "choice", topic: "Plotëso Fjalinë", question: "Zgjidh fjalën e duhur: Pjesët ______ plotësojnë kuptimin e kryefjalës dhe të kallëzuesit.", options: ["kryesore", "plotësuese"], answer: "plotësuese" },
+            { type: "choice", topic: "Plotëso Fjalinë", question: "Zgjidh fjalën për të plotësuar fjalinë: 'Vajza e vogël luan ______.'", options: ["e bukur", "në oborr"], answer: "në oborr" },
+            { type: "choice", topic: "Plotëso Fjalinë", question: "Cila fjalë mungon? 'Zogu ______ në degë.'", options: ["fluturon", "këndon", "noton"], answer: "këndon" },
+
+            // --- TOPIC: FJALËT MOHUESE S' DHE NUK (2 Questions) ---
+            { type: "choice", topic: "Fjalët Mohuese", question: "Plotëso fjalinë: Unë ___ shkoj në shkollë pa mësuar.", options: ["s'", "nuk"], answer: "nuk" },
+            { type: "choice", topic: "Fjalët Mohuese", question: "Cila është shkruar saktë?", options: ["Ti smund të luash.", "Ti s'mund të luash."], answer: "Ti s'mund të luash." },
+
+            // --- TOPIC: NDARJA E FJALËVE (3 Questions) ---
+            { type: "choice", topic: "Ndarja e fjalëve", question: "Si ndahet saktë fjala 'populli' në fund të rreshtit?", options: ["po-pu-lli", "pop-u-lli", "popu-lli"], answer: "popu-lli" },
+            { type: "choice", topic: "Ndarja e fjalëve", question: "Si ndahet saktë fjala 'flutura'?", options: ["fl-utura", "flu-tura"], answer: "flu-tura" },
+            { type: "choice", topic: "Ndarja e fjalëve", question: "Cila fjalë është ndarë GABIM?", options: ["shk-oj", "zemër-mirë", "ba-rka"], answer: "shk-oj" },
+
+            // --- TOPIC: GRAMATIKË (Nouns/Adjectives/Sentence Types) (2 Questions) ---
+            { type: "choice", topic: "Fjalia e Thjeshtë", question: "A është kjo fjali e thjeshtë? 'Mami gatuan dhe pastron shtëpinë.'", options: ["Po (E thjeshtë)", "Jo (Jo e thjeshtë)"], answer: "Jo (Jo e thjeshtë)", note: "Ka dy folje: gatuan, pastron." },
+            { type: "choice", topic: "Emri", question: "Cila fjalë është EMËR I PËRVEÇËM?", options: ["qytet", "Durrës", "mal"], answer: "Durrës" }
+        ];
+
+        // --- APP STATE ---
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let isAnswered = false;
+        
+        // --- DRAG STATE ---
+        let activeDragEl = null;
+        let originalParent = null;
+        let touchOffsetX = 0;
+        let touchOffsetY = 0;
+
+        // Elements
+        const questionText = document.getElementById('question-text');
+        const topicTag = document.getElementById('topic-tag');
+        const optionsContainer = document.getElementById('options-container');
+        
+        // Simple Drag
+        const dragDropArea = document.getElementById('drag-drop-area');
+        const dropZone = document.getElementById('drop-zone');
+        const dragSource = document.getElementById('drag-source');
+        const checkDragBtn = document.getElementById('check-drag-btn');
+
+        // Analysis Drag
+        const analysisArea = document.getElementById('analysis-area');
+        const analysisSource = document.getElementById('analysis-source');
+        const checkAnalysisBtn = document.getElementById('check-analysis-btn');
+
+        // Fill Blank
+        const fillBlankArea = document.getElementById('fill-blank-area');
+        const sentenceContainer = document.getElementById('sentence-container');
+        const checkFillBtn = document.getElementById('check-fill-btn');
+
+        // General
+        const feedbackArea = document.getElementById('feedback-area');
+        const feedbackText = document.getElementById('feedback-text');
+        const nextBtn = document.getElementById('next-btn');
+        const progressBar = document.getElementById('progress-bar');
+        const counter = document.getElementById('question-counter');
+        const scoreDisplay = document.getElementById('score-display');
+        const quizArea = document.getElementById('quiz-area');
+        const resultScreen = document.getElementById('result-screen');
+        const finalScore = document.getElementById('final-score');
+
+        function initQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            scoreDisplay.innerText = `Pikët: ${score}`;
+            showQuestion();
+        }
+
+        function showQuestion() {
+            isAnswered = false;
+            let q = questions[currentQuestionIndex];
+            
+            topicTag.innerText = q.topic || "Gjuha Shqipe";
+            questionText.innerText = q.instruction || q.question;
+            counter.innerText = `Pyetja ${currentQuestionIndex + 1} / ${questions.length}`;
+            progressBar.style.width = `${((currentQuestionIndex) / questions.length) * 100}%`;
+            
+            // Reset Views
+            optionsContainer.classList.add('hidden');
+            dragDropArea.classList.add('hidden');
+            fillBlankArea.classList.add('hidden');
+            analysisArea.classList.add('hidden');
+            feedbackArea.classList.add('hidden');
+            optionsContainer.innerHTML = '';
+            
+            if (q.type === 'choice') {
+                setupChoiceQuestion(q);
+            } else if (q.type === 'drag') {
+                setupDragQuestion(q);
+            } else if (q.type === 'fill') {
+                setupFillQuestion(q);
+            } else if (q.type === 'analysis') {
+                setupAnalysisQuestion(q);
+            }
+        }
+
+        // --- CHOICE LOGIC ---
+        function setupChoiceQuestion(q) {
+            optionsContainer.classList.remove('hidden');
+            q.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.innerText = opt;
+                btn.className = 'option-btn';
+                btn.onclick = () => handleChoice(btn, opt, q.answer);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function handleChoice(btn, selected, correct) {
+            if (isAnswered) return;
+            isAnswered = true;
+            const allBtns = optionsContainer.querySelectorAll('.option-btn');
+            
+            if (selected === correct) {
+                btn.classList.add('correct');
+                showFeedback(true, "Saktë! Bravo! 🌟");
+                score++;
+                scoreDisplay.innerText = `Pikët: ${score}`;
+            } else {
+                btn.classList.add('wrong');
+                allBtns.forEach(b => { if (b.innerText === correct) b.classList.add('correct'); });
+                showFeedback(false, `Gabim. E sakta është: ${correct}`);
+            }
+        }
+
+        // --- DRAG AND DROP LOGIC (Unified Pointer Events) ---
+        function createDraggable(text, category = null) {
+            const el = document.createElement('div');
+            el.innerText = text;
+            el.className = 'draggable-word';
+            if (category) el.dataset.category = category;
+            
+            // Bind Pointer Events (Mouse, Touch, Pen)
+            el.addEventListener('pointerdown', onPointerDown);
+            return el;
+        }
+
+        function onPointerDown(e) {
+            if (isAnswered) return;
+            
+            activeDragEl = e.target;
+            originalParent = activeDragEl.parentElement;
+            
+            // Calculate offset to grab element exactly where touched
+            const rect = activeDragEl.getBoundingClientRect();
+            touchOffsetX = e.clientX - rect.left;
+            touchOffsetY = e.clientY - rect.top;
+
+            // Prepare Element for Dragging
+            activeDragEl.classList.add('dragging');
+            activeDragEl.style.width = `${rect.width}px`; // Fix width
+            activeDragEl.style.left = `${e.clientX - touchOffsetX}px`;
+            activeDragEl.style.top = `${e.clientY - touchOffsetY}px`;
+            
+            document.body.appendChild(activeDragEl); // Move to body to float over everything
+            
+            activeDragEl.setPointerCapture(e.pointerId);
+            
+            activeDragEl.addEventListener('pointermove', onPointerMove);
+            activeDragEl.addEventListener('pointerup', onPointerUp);
+        }
+
+        function onPointerMove(e) {
+            if (!activeDragEl) return;
+            e.preventDefault();
+            
+            const x = e.clientX - touchOffsetX;
+            const y = e.clientY - touchOffsetY;
+            
+            activeDragEl.style.left = `${x}px`;
+            activeDragEl.style.top = `${y}px`;
+
+            // Hit Testing for Highlight
+            highlightDroppableUnder(e.clientX, e.clientY);
+        }
+
+        function onPointerUp(e) {
+            if (!activeDragEl) return;
+            
+            activeDragEl.releasePointerCapture(e.pointerId);
+            activeDragEl.removeEventListener('pointermove', onPointerMove);
+            activeDragEl.removeEventListener('pointerup', onPointerUp);
+            activeDragEl.classList.remove('dragging');
+            activeDragEl.style.width = '';
+            activeDragEl.style.left = '';
+            activeDragEl.style.top = '';
+
+            // Find drop target
+            const dropTarget = getDroppableUnder(e.clientX, e.clientY);
+
+            if (dropTarget) {
+                // Determine container (handle Analysis buckets specially)
+                let container = dropTarget;
+                if (container.classList.contains('category-box')) {
+                    container = container.querySelector('.cat-content') || container;
+                }
+                
+                // Clear placeholder text if dropping into zone
+                if (container.classList.contains('drop-zone')) {
+                    const ph = container.querySelector('.placeholder-text');
+                    if (ph) ph.style.display = 'none';
+                }
+                
+                container.appendChild(activeDragEl);
+            } else {
+                // Return to original if dropped in void
+                originalParent.appendChild(activeDragEl);
+                // Restore placeholder if needed
+                if (originalParent.id === 'drop-zone' && originalParent.children.length <= 1) {
+                     const ph = originalParent.querySelector('.placeholder-text');
+                     if(ph) ph.style.display = 'block';
+                }
+            }
+
+            // Clean up highlight
+            document.querySelectorAll('.droppable').forEach(el => el.classList.remove('hovered'));
+            activeDragEl = null;
+            originalParent = null;
+        }
+
+        function getDroppableUnder(x, y) {
+            // Hide drag element momentarily to peek underneath
+            activeDragEl.style.visibility = 'hidden';
+            const elemBelow = document.elementFromPoint(x, y);
+            activeDragEl.style.visibility = 'visible';
+
+            if (!elemBelow) return null;
+            return elemBelow.closest('.droppable');
+        }
+
+        function highlightDroppableUnder(x, y) {
+            document.querySelectorAll('.droppable').forEach(el => el.classList.remove('hovered'));
+            const target = getDroppableUnder(x, y);
+            if (target) target.classList.add('hovered');
+        }
+
+        // --- SETUP DRAG QUESTION (Type 1) ---
+        function setupDragQuestion(q) {
+            dragDropArea.classList.remove('hidden');
+            
+            const ph = dropZone.querySelector('.placeholder-text');
+            if(ph) ph.style.display = 'block';
+            
+            // Clean up previous
+            Array.from(dropZone.children).forEach(c => {
+                if(!c.classList.contains('placeholder-text')) c.remove();
+            });
+            dragSource.innerHTML = '';
+            checkDragBtn.classList.remove('hidden');
+
+            let words = [...q.words].sort(() => Math.random() - 0.5);
+            words.forEach(word => {
+                dragSource.appendChild(createDraggable(word));
+            });
+        }
+
+        // --- SETUP ANALYSIS QUESTION (Type 2) ---
+        function setupAnalysisQuestion(q) {
+            analysisArea.classList.remove('hidden');
+            analysisSource.innerHTML = '';
+            checkAnalysisBtn.classList.remove('hidden');
+            
+            document.querySelectorAll('.category-box .cat-content').forEach(c => c.innerHTML = '');
+
+            let shuffled = [...q.sentenceWords].sort(() => Math.random() - 0.5);
+            shuffled.forEach(item => {
+                analysisSource.appendChild(createDraggable(item.text, item.category));
+            });
+        }
+
+        // --- CHECK LOGIC ---
+        checkDragBtn.onclick = () => {
+            if (isAnswered) return;
+            const words = Array.from(dropZone.querySelectorAll('.draggable-word')).map(e => e.innerText);
+            const sentence = words.join(' ');
+            const correct = questions[currentQuestionIndex].answer;
+
+            if (sentence === correct) {
+                showFeedback(true, "Shkëlqyeshëm! Fjalia është e saktë! 🎉");
+                score++;
+                scoreDisplay.innerText = `Pikët: ${score}`;
+            } else {
+                showFeedback(false, `Jo plotësisht. E sakta: "${correct}"`);
+            }
+            isAnswered = true;
+            checkDragBtn.classList.add('hidden');
+        };
+
+        checkAnalysisBtn.onclick = () => {
+            if (isAnswered) return;
+            let allCorrect = true;
+            
+            const allWords = document.querySelectorAll('#analysis-area .draggable-word');
+            allWords.forEach(word => {
+                const correctCat = word.dataset.category;
+                const parentBox = word.closest('.category-box');
+                
+                if (parentBox && parentBox.dataset.id === correctCat) {
+                    word.style.backgroundColor = 'var(--success)';
+                    word.style.color = 'white';
+                    word.style.borderColor = 'var(--success)';
+                } else {
+                    allCorrect = false;
+                    word.style.backgroundColor = 'var(--error)';
+                    word.style.color = 'white';
+                    word.style.borderColor = 'var(--error)';
+                }
+            });
+
+            // Ensure source is empty
+            if (analysisSource.children.length > 0) allCorrect = false;
+
+            if (allCorrect) {
+                showFeedback(true, "Analizë e shkëlqyer! 🌟");
+                score++;
+                scoreDisplay.innerText = `Pikët: ${score}`;
+            } else {
+                showFeedback(false, "Ka disa gabime. Shiko ngjyrat.");
+            }
+            isAnswered = true;
+            checkAnalysisBtn.classList.add('hidden');
+        };
+
+        // --- FILL IN BLANK LOGIC ---
+        function setupFillQuestion(q) {
+            fillBlankArea.classList.remove('hidden');
+            checkFillBtn.classList.remove('hidden');
+            
+            sentenceContainer.innerHTML = `
+                <span>${q.sentencePart1}</span>
+                <input type="text" class="blank-input" placeholder="${q.placeholder}" autocomplete="off">
+                <span>${q.sentencePart2}</span>
+            `;
+            setTimeout(() => {
+                const input = sentenceContainer.querySelector('input');
+                if(input) input.focus();
+            }, 100);
+        }
+
+        checkFillBtn.onclick = () => {
+            if (isAnswered) return;
+            const q = questions[currentQuestionIndex];
+            const input = sentenceContainer.querySelector('input');
+            const userVal = input.value.trim();
+            const isCorrect = q.answer.some(ans => ans.toLowerCase() === userVal.toLowerCase());
+
+            if (isCorrect) {
+                input.classList.add('correct-input');
+                showFeedback(true, `Bravo! "${userVal}" është zgjedhje e saktë.`);
+                score++;
+                scoreDisplay.innerText = `Pikët: ${score}`;
+            } else {
+                input.classList.add('wrong-input');
+                showFeedback(false, `Mund të vendosje: ${q.answer[0]}`);
+            }
+            isAnswered = true;
+            checkFillBtn.classList.add('hidden');
+        };
+
+        function showFeedback(isCorrect, msg) {
+            feedbackArea.classList.remove('hidden');
+            feedbackText.innerText = msg;
+            feedbackText.style.color = isCorrect ? 'var(--success)' : 'var(--error)';
+        }
+
+        nextBtn.onclick = () => {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                showQuestion();
+            } else {
+                finishQuiz();
+            }
+        };
+
+        function finishQuiz() {
+            quizArea.classList.add('hidden');
+            resultScreen.classList.remove('hidden');
+            progressBar.style.width = '100%';
+            finalScore.innerText = `Ti more ${score} nga ${questions.length} pikë!`;
+        }
+
+        // Initialize quiz after content loads to prevent null element errors
+        window.onload = function() {
+            initQuiz();
+        };
+    </script>
 </body>
 </html>
